@@ -21,7 +21,7 @@
 #include "wasm_export.h"
 
 #define HASHMAP_INITIAL_SIZE 20
-#define TFLITE_BACKEND_LIB "libwasi_nn_tflite.so"
+#define TFLITE_BACKEND_LIB "./libwasi_nn_tflite.so"
 #define OPENVINO_BACKEND_LIB "libwasi_nn_openvino.so"
 #define LLAMACPP_BACKEND_LIB "libwasi_nn_llamacpp.so"
 
