@@ -281,87 +281,84 @@ init_execution_context(void *tflite_ctx, graph g, graph_execution_context *ctx)
 
 __attribute__((visibility("default"))) wasi_nn_error
 set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
-    tensor *input_tensor)
+          tensor *input_tensor)
 {
-TFLiteContext *tfl_ctx = (TFLiteContext *)tflite_ctx;
+    TFLiteContext *tfl_ctx = (TFLiteContext *)tflite_ctx;
 
-wasi_nn_error res;
-if (success != (res = is_valid_graph_execution_context(tfl_ctx, ctx)))
-  return res;
+    wasi_nn_error res;
+    if (success != (res = is_valid_graph_execution_context(tfl_ctx, ctx)))
+        return res;
 
-uint32_t num_tensors =
-  tfl_ctx->interpreters[ctx].interpreter->inputs().size();
-NN_DBG_PRINTF("Number of tensors (%d)", num_tensors);
-if (index + 1 > num_tensors) {
-  return runtime_error;
+    uint32_t num_tensors =
+        tfl_ctx->interpreters[ctx].interpreter->inputs().size();
+    NN_DBG_PRINTF("Number of tensors (%d)", num_tensors);
+    if (index + 1 > num_tensors) {
+        return runtime_error;
+    }
+
+    auto tensor = tfl_ctx->interpreters[ctx].interpreter->input_tensor(index);
+    if (tensor == NULL) {
+        NN_ERR_PRINTF("Missing memory");
+        return too_large;
+    }
+
+    uint32_t model_tensor_size = 1;
+    for (int i = 0; i < tensor->dims->size; ++i)
+        model_tensor_size *= (uint32_t)tensor->dims->data[i];
+
+    uint32_t input_tensor_size = 1;
+    for (uint32_t i = 0; i < input_tensor->dimensions->size; i++)
+        input_tensor_size *= (uint32_t)input_tensor->dimensions->buf[i];
+
+    if (model_tensor_size != input_tensor_size) {
+        NN_ERR_PRINTF("Input tensor shape from the model is different than the "
+                      "one provided");
+        return invalid_argument;
+    }
+    printf("tesnor->type = %d\n", tensor->type);
+    switch (tensor->type) {
+        case fp32:
+        case fp16:
+        {
+            auto *input = tfl_ctx->interpreters[ctx]
+                              .interpreter->typed_input_tensor<float>(index);
+            if (input == NULL)
+                return too_large;
+
+            bh_memcpy_s(input, model_tensor_size * sizeof(float),
+                        input_tensor->data, model_tensor_size * sizeof(float));
+            break;
+        }
+        case ip32:
+        {
+            auto *input = tfl_ctx->interpreters[ctx]
+                              .interpreter->typed_input_tensor<int32_t>(index);
+            if (input == NULL)
+                return too_large;
+
+            bh_memcpy_s(input, model_tensor_size * sizeof(int32_t),
+                        input_tensor->data,
+                        model_tensor_size * sizeof(int32_t));
+            break;
+        }
+        case up8:
+        {
+            auto *input = tfl_ctx->interpreters[ctx]
+                              .interpreter->typed_input_tensor<uint8_t>(index);
+            if (input == NULL)
+                return too_large;
+
+            bh_memcpy_s(input, model_tensor_size * sizeof(uint8_t),
+                        input_tensor->data,
+                        model_tensor_size * sizeof(uint8_t));
+            break;
+        }
+        default:
+            NN_ERR_PRINTF("Strange tensor type");
+            return invalid_argument;
+    }
+    return success;
 }
-
-auto tensor = tfl_ctx->interpreters[ctx].interpreter->input_tensor(index);
-if (tensor == NULL) {
-  NN_ERR_PRINTF("Missing memory");
-  return too_large;
-}
-
-uint32_t model_tensor_size = 1;
-for (int i = 0; i < tensor->dims->size; ++i)
-  model_tensor_size *= (uint32_t)tensor->dims->data[i];
-
-uint32_t input_tensor_size = 1;
-for (uint32_t i = 0; i < input_tensor->dimensions->size; i++)
-  input_tensor_size *= (uint32_t)input_tensor->dimensions->buf[i];
-
-if (model_tensor_size != input_tensor_size) {
-  NN_ERR_PRINTF("Input tensor shape from the model is different than the "
-                "one provided");
-  return invalid_argument;
-}
-printf("tesnor->type = %d\n", tensor->type);
-switch (tensor->type) {
-  case fp32:
-  case fp16:
-  {
-      auto *input =
-          tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<float>(
-              index);
-      if (input == NULL) 
-          return too_large;
-
-      bh_memcpy_s(input, model_tensor_size * sizeof(float), input_tensor->data,
-                  model_tensor_size * sizeof(float));
-      break;
-  }
-  case ip32:
-  {
-      auto *input = 
-          tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<int32_t>(
-              index);
-      if (input == NULL) 
-          return too_large;
-
-      bh_memcpy_s(input, model_tensor_size * sizeof(int32_t), input_tensor->data,
-                  model_tensor_size * sizeof(int32_t));
-      break;
-  }
-  case up8:
-  {
-      auto *input =
-          tfl_ctx->interpreters[ctx].interpreter->typed_input_tensor<uint8_t>(
-              index);
-      if (input == NULL) 
-          return too_large;
-
-      bh_memcpy_s(input, model_tensor_size * sizeof(uint8_t), input_tensor->data,
-                  model_tensor_size * sizeof(uint8_t));
-      break;
-  }
-  default:
-      NN_ERR_PRINTF("Strange tensor type");
-      return invalid_argument;
-}
-return success;
-}
-
-
 
 __attribute__((visibility("default"))) wasi_nn_error
 compute(void *tflite_ctx, graph_execution_context ctx)
