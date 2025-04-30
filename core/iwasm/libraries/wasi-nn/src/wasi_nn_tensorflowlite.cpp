@@ -315,10 +315,9 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                       "one provided");
         return invalid_argument;
     }
-    printf("tesnor->type = %d\n", tensor->type);
     switch (tensor->type) {
-        case fp32:
-        case fp16:
+        case kTfLiteFloat32:
+        case kTfLiteFloat16:
         {
             auto *input = tfl_ctx->interpreters[ctx]
                               .interpreter->typed_input_tensor<float>(index);
@@ -329,7 +328,7 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                         input_tensor->data, model_tensor_size * sizeof(float));
             break;
         }
-        case ip32:
+        case kTfLiteInt32:
         {
             auto *input = tfl_ctx->interpreters[ctx]
                               .interpreter->typed_input_tensor<int32_t>(index);
@@ -341,7 +340,7 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
                         model_tensor_size * sizeof(int32_t));
             break;
         }
-        case up8:
+        case kTfLiteUInt8:
         {
             auto *input = tfl_ctx->interpreters[ctx]
                               .interpreter->typed_input_tensor<uint8_t>(index);

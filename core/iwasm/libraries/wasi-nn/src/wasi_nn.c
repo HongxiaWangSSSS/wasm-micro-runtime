@@ -217,6 +217,7 @@ choose_a_backend()
 #endif
 
     handle = dlopen(TFLITE_BACKEND_LIB, RTLD_LAZY);
+
     if (handle) {
         NN_INFO_PRINTF("Using tflite backend");
         dlclose(handle);
