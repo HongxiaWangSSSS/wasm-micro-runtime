@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "nn.h"
 #include "logger.h"
@@ -16,32 +17,11 @@
 #define EPSILON 1e-2
 
 void
-test_average_quantized(execution_target target)
-{
-    int dims[] = { 1, 5, 5, 1 };
-    input_info input = create_input(dims);
-
-    uint32_t output_size = 0;
-    float *output =
-        run_inference(target, input.input_tensor, input.dim, &output_size,
-                      "./models/quantized_model.tflite", 1);
-
-    NN_INFO_PRINTF("Output size: %d", output_size);
-    NN_INFO_PRINTF("Result: average is %f", output[0]);
-    // NOTE: 11.95 instead of 12 because of errors due quantization
-    assert(fabs(output[0] - 11.95) < EPSILON);
-
-    free(input.dim);
-    free(input.input_tensor);
-    free(output);
-}
-
-void
 parse_detection_results(float *out_tensor, uint32_t output_size)
 {
     uint32_t offset = 0;
 
-    uint32_t num = (uint32_t)out_tensor[output_size - 1];
+    uint32_t num = (uint32_t)out_tensor[output_size - 1]; // num 是最后一个元素
     printf("Total number of detections: %d\n", num);
 
     printf("Boxes (ymin, xmin, ymax, xmax):\n");
@@ -49,7 +29,7 @@ parse_detection_results(float *out_tensor, uint32_t output_size)
     for (int i = 0; i < num; i++) {
         printf("Box %d: [%f, %f, %f, %f]\n", i, boxes[i * 4] * 576,
                boxes[i * 4 + 1] * 768, boxes[i * 4 + 2] * 576,
-               boxes[i * 4 + 3] * 768); //img (w,h)
+               boxes[i * 4 + 3] * 768);
     }
     offset += num * 4;
 
@@ -65,9 +45,17 @@ parse_detection_results(float *out_tensor, uint32_t output_size)
     for (int i = 0; i < num; i++) {
         printf("Score %d: %f\n", i, scores[i]);
     }
-    offset += num; 
+    offset += num;
 
     printf("Parsing complete.\n");
+}
+
+static double
+time_ms()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000 + ts.tv_nsec / 1000000.0;
 }
 
 void
@@ -80,7 +68,7 @@ test_detection(execution_target target)
         return;
     }
 
-    size_t tensor_size = 1 * 300 * 300 * 3; 
+    size_t tensor_size = 1 * 300 * 300 * 3; // shape (1, 300, 300, 3)
 
     uint8_t *input_tensor = (uint8_t *)malloc(tensor_size * sizeof(uint8_t));
     if (input_tensor == NULL) {
@@ -89,16 +77,15 @@ test_detection(execution_target target)
 
     fread(input_tensor, sizeof(uint8_t), tensor_size, file);
     fclose(file);
-    printf("input_tensor[0][0][0] = %d\n", input_tensor[0]);
-    printf("input_tensor[0][0][0] = %d\n", input_tensor[1]);
     assert(input_tensor[0] == 58);
     assert(input_tensor[1] == 59);
 
     uint32_t output_size = 0;
+    double start_time_ = time_ms();
     float *output = run_inference(target, input_tensor, dim, &output_size,
                                   "./detection.tflite", 4);
-
-    NN_INFO_PRINTF("Output size: %d", output_size);
+    double end_time_ = time_ms();
+    printf("Inference time: %f ms\n", end_time_ - start_time_);
     parse_detection_results(output, output_size);
     free(input_tensor);
     free(output);
@@ -123,8 +110,7 @@ main()
         NN_ERR_PRINTF("Wrong target!");
         return 1;
     }
-    // NN_INFO_PRINTF("################### Testing quantized model...");
-    // test_average_quantized(target);
+
     NN_INFO_PRINTF("################### Testing detection model...");
     test_detection(target);
 
