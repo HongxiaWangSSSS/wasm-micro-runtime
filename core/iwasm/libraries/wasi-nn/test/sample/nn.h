@@ -30,7 +30,7 @@
  wasm_init_execution_context(graph g, graph_execution_context *ctx);
  
  wasi_nn_error
- wasm_set_input(graph_execution_context ctx, float *input_tensor, uint32_t *dim);
+ wasm_set_input(graph_execution_context ctx, float *input_tensor, uint32_t *dim,tensor_type type);
  
  wasi_nn_error
  wasm_compute(graph_execution_context ctx);
@@ -44,7 +44,7 @@
  float *
  run_inference(execution_target target, float *input, uint32_t *input_size,
                uint32_t *output_size, char *model_name,
-               uint32_t num_output_tensors);
+               uint32_t num_output_tensors,tensor_type type);
  
  input_info
  create_input(int *dims);

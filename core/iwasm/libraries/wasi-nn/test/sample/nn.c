@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define WASM_LOAD_BY_NAME 1
 
@@ -71,7 +72,7 @@ wasm_init_execution_context(graph g, graph_execution_context *ctx)
 }
 
 wasi_nn_error
-wasm_set_input(graph_execution_context ctx, float *input_tensor, uint32_t *dim)
+wasm_set_input(graph_execution_context ctx, float *input_tensor, uint32_t *dim,tensor_type type)
 {
     tensor_dimensions dims;
     dims.size = INPUT_TENSOR_DIMS;
@@ -83,7 +84,7 @@ wasm_set_input(graph_execution_context ctx, float *input_tensor, uint32_t *dim)
     tensor.dimensions = &dims;
     for (int i = 0; i < tensor.dimensions->size; ++i)
         tensor.dimensions->buf[i] = dim[i];
-    tensor.type = up8;
+    tensor.type = type;
     tensor.data = (uint8_t *)input_tensor;
     wasi_nn_error err = set_input(ctx, 0, &tensor);
 
@@ -103,13 +104,21 @@ wasm_get_output(graph_execution_context ctx, uint32_t index, float *out_tensor,
 {
     return get_output(ctx, index, (uint8_t *)out_tensor, out_size);
 }
+static double
+time_ms()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000 + ts.tv_nsec / 1000000.0;
+}
 
 float *
 run_inference(execution_target target, float *input, uint32_t *input_size,
               uint32_t *output_size, char *model_name,
-              uint32_t num_output_tensors)
+              uint32_t num_output_tensors,tensor_type type)
 {
     graph graph;
+    double start_time_ = time_ms();
 
 #if WASM_LOAD_BY_NAME == 0
     if (wasm_load(model_name, &graph, target) != success) {
@@ -122,14 +131,15 @@ run_inference(execution_target target, float *input, uint32_t *input_size,
         exit(1);
     }
 #endif
-
+    double end_time_ = time_ms();
+    printf("WASM_LOAD_BY_NAME =%d ,time cost: %f ms\n",WASM_LOAD_BY_NAME, end_time_ - start_time_);
     graph_execution_context ctx;
     if (wasm_init_execution_context(graph, &ctx) != success) {
         NN_ERR_PRINTF("Error when initialixing execution context.");
         exit(1);
     }
 
-    if (wasm_set_input(ctx, input, input_size) != success) {
+    if (wasm_set_input(ctx, input, input_size,type) != success) {
         NN_ERR_PRINTF("Error when setting input tensor.");
         exit(1);
     }
