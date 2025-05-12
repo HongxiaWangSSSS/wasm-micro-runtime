@@ -221,8 +221,8 @@ main()
         return 1;
     }
 
-    // NN_INFO_PRINTF("################### Testing detection model...");
-    // test_detection(target);
+    NN_INFO_PRINTF("################### Testing detection model...");
+    test_detection(target);
     NN_INFO_PRINTF("################### Testing classification model...");
     test_classification(target);
 
