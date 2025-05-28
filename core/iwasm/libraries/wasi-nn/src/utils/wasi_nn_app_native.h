@@ -34,16 +34,9 @@ typedef struct {
 } tensor_dimensions_wasm;
 
 typedef struct {
-#if WASM_ENABLE_WASI_EPHEMERAL_NN != 0
-    tensor_dimensions_wasm dimensions;
-    tensor_type type;
-    uint32_t data_offset;
-    uint32_t data_size;
-#else  /* WASM_ENABLE_WASI_EPHEMERAL_NN == 0 */
     uint32_t dimensions_offset;
     tensor_type type;
     uint32_t data_offset;
-#endif /* WASM_ENABLE_WASI_EPHEMERAL_NN != 0 */
 } tensor_wasm;
 
 #if WASM_ENABLE_WASI_EPHEMERAL_NN != 0

@@ -21,7 +21,7 @@
 #include "wasm_export.h"
 
 #define HASHMAP_INITIAL_SIZE 20
-#define TFLITE_BACKEND_LIB "libwasi_nn_tflite.so"
+#define TFLITE_BACKEND_LIB "./libwasi_nn_tflite.so"
 #define OPENVINO_BACKEND_LIB "libwasi_nn_openvino.so"
 #define LLAMACPP_BACKEND_LIB "libwasi_nn_llamacpp.so"
 
@@ -585,6 +585,7 @@ wasi_nn_error
 wasi_nn_set_input(wasm_exec_env_t exec_env, graph_execution_context ctx,
                   uint32_t index, tensor_wasm *input_tensor)
 {
+    printf("wasi_nn_set_input\n");
     NN_DBG_PRINTF("[WASI NN] SET_INPUT [ctx=%d, index=%d]...", ctx, index);
 
     wasm_module_inst_t instance = wasm_runtime_get_module_inst(exec_env);
@@ -647,7 +648,7 @@ wasi_nn_get_output(wasm_exec_env_t exec_env, graph_execution_context ctx,
                    uint32_t *output_tensor_size)
 #endif /* WASM_ENABLE_WASI_EPHEMERAL_NN != 0 */
 {
-    NN_DBG_PRINTF("[WASI NN] GET_OUTPUT [ctx=%d, index=%d]...", ctx, index);
+    printf("[WASI NN] GET_OUTPUT [ctx=%d, index=%d]...\n", ctx, index);
 
     wasm_module_inst_t instance = wasm_runtime_get_module_inst(exec_env);
     if (!instance) {

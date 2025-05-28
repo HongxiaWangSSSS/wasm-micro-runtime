@@ -47,7 +47,11 @@ wasm_load(char *model_name, graph *g, execution_target target)
     arr.buf[0].size = result;
     arr.buf[0].buf = buffer;
 
+#if WASM_ENABLE_WASI_EPHEMERAL_NN != 0
+    wasi_nn_error res = load(arr.buf, 1, tensorflowlite, target, g);
+#else
     wasi_nn_error res = load(&arr, tensorflowlite, target, g);
+#endif
 
     fclose(pFile);
     free(buffer);

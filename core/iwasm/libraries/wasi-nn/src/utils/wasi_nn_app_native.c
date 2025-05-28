@@ -101,11 +101,7 @@ static wasi_nn_error
 tensor_data_app_native(wasm_module_inst_t instance, uint32_t total_elements,
                        tensor_wasm *input_tensor_wasm, tensor_data *data)
 {
-#if WASM_ENABLE_WASI_EPHEMERAL_NN != 0
-#define data_size input_tensor_wasm->data_size
-#else
 #define data_size total_elements
-#endif
 
     if (!wasm_runtime_validate_app_addr(instance,
                                         (uint64)input_tensor_wasm->data_offset,
@@ -115,6 +111,9 @@ tensor_data_app_native(wasm_module_inst_t instance, uint32_t total_elements,
     }
     *data = (tensor_data)wasm_runtime_addr_app_to_native(
         instance, (uint64)input_tensor_wasm->data_offset);
+        printf("input_tensor_wasm->data_offset: %d\n",
+           input_tensor_wasm->data_offset);
+        printf("data_size: %d\n", data_size);
     return success;
 #undef data_size
 }
@@ -124,20 +123,18 @@ tensor_dimensions_app_native(wasm_module_inst_t instance,
                              tensor_wasm *input_tensor_wasm,
                              tensor_dimensions **dimensions)
 {
-#if WASM_ENABLE_WASI_EPHEMERAL_NN != 0
-    tensor_dimensions_wasm *dimensions_wasm = &input_tensor_wasm->dimensions;
-#else  /* WASM_ENABLE_WASI_EPHEMERAL_NN == 0 */
     if (!wasm_runtime_validate_app_addr(
             instance, (uint64)input_tensor_wasm->dimensions_offset,
             (uint64)sizeof(tensor_dimensions_wasm))) {
         NN_ERR_PRINTF("input_tensor_wasm->dimensions_offset is invalid");
         return invalid_argument;
     }
+    printf("input_tensor_wasm->dimensions_offset: %d\n",
+           input_tensor_wasm->dimensions_offset);
 
     tensor_dimensions_wasm *dimensions_wasm =
         (tensor_dimensions_wasm *)wasm_runtime_addr_app_to_native(
             instance, (uint64)input_tensor_wasm->dimensions_offset);
-#endif /* WASM_ENABLE_WASI_EPHEMERAL_NN != 0 */
 
     if (!wasm_runtime_validate_app_addr(instance,
                                         (uint64)dimensions_wasm->buf_offset,
@@ -154,6 +151,8 @@ tensor_dimensions_app_native(wasm_module_inst_t instance,
     (*dimensions)->size = dimensions_wasm->size;
     (*dimensions)->buf = (uint32_t *)wasm_runtime_addr_app_to_native(
         instance, (uint64)dimensions_wasm->buf_offset);
+    printf("dimensions_wasm->buf_offset: %d\n",
+           dimensions_wasm->buf_offset);
 
     NN_DBG_PRINTF("Number of dimensions: %d", (*dimensions)->size);
     return success;

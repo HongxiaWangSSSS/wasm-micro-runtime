@@ -300,12 +300,20 @@ set_input(void *tflite_ctx, graph_execution_context ctx, uint32_t index,
     }
 
     uint32_t model_tensor_size = 1;
+    printf("tensor->dims->size: %d\n",tensor->dims->size);
     for (int i = 0; i < tensor->dims->size; ++i)
+    {
         model_tensor_size *= (uint32_t)tensor->dims->data[i];
+        printf("tensor->dims->data[%d]: %d\n", i, tensor->dims->data[i]);
+    }
 
     uint32_t input_tensor_size = 1;
+    printf("input_tensor->dimensions->size: %d\n",input_tensor->dimensions->size);
     for (uint32_t i = 0; i < input_tensor->dimensions->size; i++)
+    {
         input_tensor_size *= (uint32_t)input_tensor->dimensions->buf[i];
+        printf("input_tensor->dimensions->buf[%d]: %d\n", i, input_tensor->dimensions->buf[i]);
+    }
 
     if (model_tensor_size != input_tensor_size) {
         NN_ERR_PRINTF("Input tensor shape from the model is different than the "

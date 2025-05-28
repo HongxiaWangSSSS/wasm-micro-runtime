@@ -12,17 +12,18 @@ CURR_PATH=$(cd $(dirname $0) && pwd -P)
     -DNN_LOG_LEVEL=1 \
     -Wl,--allow-undefined \
     -I../include -I../src/utils \
+    -DWASM_ENABLE_WASI_EPHEMERAL_NN=1 \
     -o test_tensorflow.wasm \
     test_tensorflow.c utils.c
 
 # TFLite models to use in the tests
 
-cd ${CURR_PATH}/models
-python3 average.py
-python3 max.py
-python3 mult_dimension.py
-python3 mult_outputs.py
-python3 sum.py
+# cd ${CURR_PATH}/models
+# python3 average.py
+# python3 max.py
+# python3 mult_dimension.py
+# python3 mult_outputs.py
+# python3 sum.py
 
 # Specific tests for TPU
 
@@ -31,11 +32,12 @@ cd ${CURR_PATH}
     --target=wasm32-wasi \
     -DNN_LOG_LEVEL=1 \
     -Wl,--allow-undefined \
+    -DWASM_ENABLE_WASI_EPHEMERAL_NN=1 \
     -I../include -I../src/utils \
     -o test_tensorflow_quantized.wasm \
     test_tensorflow_quantized.c utils.c
 
-cd ${CURR_PATH}/models
-python3 quantized.py
+# cd ${CURR_PATH}/models
+# python3 quantized.py
 
 cd ${CURR_PATH}
